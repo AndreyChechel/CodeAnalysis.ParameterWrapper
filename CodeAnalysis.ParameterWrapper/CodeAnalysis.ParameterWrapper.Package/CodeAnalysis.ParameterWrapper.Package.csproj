@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>CodeAnalysis.ParameterWrapper</PackageId>
+    <PackageVersion>1.0.0.0</PackageVersion>
+    <Authors>Andrey Chechel</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/AndreyChechel/CodeAnalysis.ParameterWrapper</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/AndreyChechel/CodeAnalysis.ParameterWrapper</RepositoryUrl>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Description>This analyzer organizes ctor/method parameters, so every parameter is declared on its own line.</Description>
+    <Copyright>Copyright © Andrey Chechel 2020</Copyright>
+    <PackageTags>CodeAnalysis.ParameterWrapper, analyzers, parameter, wrap, formatting</PackageTags>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_AddAnalyzersToOutput</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CodeAnalysis.ParameterWrapper.CodeFixes\CodeAnalysis.ParameterWrapper.CodeFixes.csproj" />
+    <ProjectReference Include="..\CodeAnalysis.ParameterWrapper\CodeAnalysis.ParameterWrapper.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="tools\*.ps1" CopyToOutputDirectory="Always" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <Target Name="_AddAnalyzersToOutput">
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(OutputPath)\CodeAnalysis.ParameterWrapper.dll" PackagePath="analyzers/dotnet/cs" />
+      <TfmSpecificPackageFile Include="$(OutputPath)\CodeAnalysis.ParameterWrapper.CodeFixes.dll" PackagePath="analyzers/dotnet/cs" />
+    </ItemGroup>
+  </Target>
+
+</Project>
