@@ -52,3 +52,7 @@ class Test
     }
 }
 ```
+
+## Demo
+
+![ParameterWrapper](https://user-images.githubusercontent.com/16582701/101297384-d1423300-3839-11eb-8ad3-48a4354dfad2.gif)
