@@ -4,13 +4,13 @@
 This analyzer helps to organize method/constructor parameters nicely in your C# program. 
 You'll find it extremely helpful in projects of a certain size with DI containers configured, long type names and/or methods with many parameters declared.
 
-# Installation
+## Installation
 
 The analyzer can be installed:
 - globally using the Visual Studio 2019 Extension ([link](https://marketplace.visualstudio.com/items?itemName=AndreyChechel.ParameterWrapper))
 - individually (per-project) using the NuGet package ([link](https://www.nuget.org/packages/CodeAnalysis.ParameterWrapper/))
 
-# Example
+## Example
 
 Consider the following method declarations:
 
@@ -59,6 +59,6 @@ class Test
 }
 ```
 
-# Demo
+## Demo
 
 ![ParameterWrapper](https://user-images.githubusercontent.com/16582701/101297384-d1423300-3839-11eb-8ad3-48a4354dfad2.gif)
