@@ -9,7 +9,7 @@
 
   <PropertyGroup>
     <PackageId>CodeAnalysis.ParameterWrapper</PackageId>
-    <PackageVersion>1.0.0.0</PackageVersion>
+    <PackageVersion>1.1.0.0</PackageVersion>
     <Authors>Andrey Chechel</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/AndreyChechel/CodeAnalysis.ParameterWrapper</PackageProjectUrl>

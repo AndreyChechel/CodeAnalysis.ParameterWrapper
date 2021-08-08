@@ -1,7 +1,7 @@
 # ParameterWrapper
 [![NuGet Status](https://img.shields.io/nuget/v/CodeAnalysis.ParameterWrapper)](https://www.nuget.org/packages/CodeAnalysis.ParameterWrapper/)
 
-This analyzer helps to organize method/constructor parameters nicely in your C# program. 
+This analyzer helps to organize method/constructor/delegate parameters nicely in your C# program. 
 You'll find it extremely helpful in projects of a certain size with DI containers configured, long type names and/or methods with many parameters declared.
 
 ## Installation

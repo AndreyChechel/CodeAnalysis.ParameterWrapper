@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="CodeAnalysis.ParameterWrapper.bc39a2ca-80f6-4bc8-8158-98958dddd975" Version="1.0" Language="en-US" Publisher="Andrey Chechel"/>
+    <Identity Id="CodeAnalysis.ParameterWrapper.bc39a2ca-80f6-4bc8-8158-98958dddd975" Version="1.1" Language="en-US" Publisher="Andrey Chechel"/>
     <DisplayName>CodeAnalysis.ParameterWrapper</DisplayName>
-    <Description xml:space="preserve">This extension organizes ctor/method parameters, so every parameter is declared on its own line.</Description>
+    <Description xml:space="preserve">This extension organizes ctor/method/delegate parameters, so every parameter is declared on its own line.</Description>
   </Metadata>
   <Installation>
     <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[15.0,)" />
