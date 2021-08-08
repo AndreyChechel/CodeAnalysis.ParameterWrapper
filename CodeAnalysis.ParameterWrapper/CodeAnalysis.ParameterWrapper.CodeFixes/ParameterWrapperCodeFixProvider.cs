@@ -51,41 +51,37 @@ namespace CodeAnalysis.ParameterWrapper
                 diagnostic);
         }
 
-        private Task<Solution> OrganizeParametersAsync(Document document, ParameterListSyntax paramListDecl, CancellationToken cancellationToken)
+        private Task<Solution> OrganizeParametersAsync(Document document, ParameterListSyntax parameterList, CancellationToken cancellationToken)
         {
-            if (paramListDecl.Parent is MethodDeclarationSyntax method)
+            if (parameterList.TryGetSignature(out var signature))
             {
-                return OrganizeMethodParametersAsync(document, method, paramListDecl, cancellationToken);
-            }
-            else if (paramListDecl.Parent is ConstructorDeclarationSyntax ctor)
-            {
-                return OrganizeCtorParametersAsync(document, ctor, paramListDecl, cancellationToken);
+                return OrganizeParametersAsync(document, signature, parameterList, cancellationToken);
             }
 
             return Task.FromResult(document.Project.Solution);
         }
 
-        private async Task<Solution> OrganizeMethodParametersAsync(Document document, MethodDeclarationSyntax method, ParameterListSyntax paramListDecl, CancellationToken cancellationToken)
+        private async Task<Solution> OrganizeParametersAsync(Document document, ISignatureSyntax signature, ParameterListSyntax paramListDecl, CancellationToken cancellationToken)
         {
-            var updatedMethod = method;
+            var updatedSignature = signature;
 
             if (paramListDecl.Parameters.Count == 0)
             {
-                // Parentheses must be on the same line as the method identifier
-                updatedMethod = NormalizeMethodSingleLineParentheses(updatedMethod);
+                // Parentheses must be on the same line as the signature identifier
+                updatedSignature = NormalizeSingleLineParentheses(updatedSignature);
             }
             else if (paramListDecl.Parameters.Count == 1)
             {
-                // Parentheses and the parameter must be on the same line as the method identifier
-                updatedMethod = NormalizeMethodSingleLineParentheses(updatedMethod);
+                // Parentheses and the parameter must be on the same line as the signature identifier
+                updatedSignature = NormalizeSingleLineParentheses(updatedSignature);
 
                 // Ensure the parameter is declared within a single line
-                var param = updatedMethod.ParameterList.Parameters[0];
+                var param = updatedSignature.ParameterList.Parameters[0];
                 var updatedParam = FormatSingleLineParameter(param);
 
                 if (!ReferenceEquals(param, updatedParam))
                 {
-                    updatedMethod = updatedMethod.WithParameterList(SyntaxFactory
+                    updatedSignature = updatedSignature.WithParameterList(SyntaxFactory
                         .ParameterList()
                         .AddParameters(updatedParam)
                     );
@@ -93,31 +89,31 @@ namespace CodeAnalysis.ParameterWrapper
             }
             else
             {
-                // Resolve whitespace trivia used for the method identation.
+                // Resolve whitespace trivia used for the signature identation.
                 // This whitespace will be used to indent the parameters.
-                var methodIndent = GetDeclarationIndentation(updatedMethod);
+                var indent = GetSignatureIndentation(updatedSignature);
 
                 // Parentheses must be on the separate lines (as well as parameters)
-                updatedMethod = NormalizeMethodMultiLineParentheses(updatedMethod, methodIndent);
+                updatedSignature = NormalizeMultiLineParentheses(updatedSignature, indent);
 
                 // Format parameters so they are declared on single lines
-                var updatedParams = updatedMethod.ParameterList.Parameters
+                var updatedParams = updatedSignature.ParameterList.Parameters
                     .Select(x => FormatSingleLineParameter(x))
                     .ToArray();
 
                 // Create a parameter list where each parameter is declared on its own line
-                var updatedParamsList = OrganizeMultiLineParameterList(updatedParams, methodIndent);
+                var updatedParamsList = OrganizeMultiLineParameterList(updatedParams, indent);
 
-                updatedMethod = updatedMethod.WithParameterList(
-                    updatedMethod.ParameterList.WithParameters(updatedParamsList)
+                updatedSignature = updatedSignature.WithParameterList(
+                    updatedSignature.ParameterList.WithParameters(updatedParamsList)
                 );
             }
 
             // If there were changes, update the document
-            if (!ReferenceEquals(method, updatedMethod))
+            if (!ReferenceEquals(signature, updatedSignature))
             {
                 var root = await document.GetSyntaxRootAsync(cancellationToken);
-                var updatedRoot = root.ReplaceNode(method, updatedMethod);
+                var updatedRoot = root.ReplaceNode(signature.Node, updatedSignature.Node);
                 var updatedDocument = document.WithSyntaxRoot(updatedRoot);
 
                 return updatedDocument.Project.Solution;
@@ -127,196 +123,81 @@ namespace CodeAnalysis.ParameterWrapper
             return document.Project.Solution;
         }
 
-        private async Task<Solution> OrganizeCtorParametersAsync(Document document, ConstructorDeclarationSyntax ctor, ParameterListSyntax paramListDecl, CancellationToken cancellationToken)
+        private ISignatureSyntax NormalizeSingleLineParentheses(ISignatureSyntax signature)
         {
-            var updatedCtor = ctor;
+            var typeParamEnd = (signature.TypeParameterList?.GreaterThanToken).GetValueOrDefault();
 
-            if (paramListDecl.Parameters.Count == 0)
-            {
-                // Parentheses must be on the same line as the method identifier
-                updatedCtor = NormalizeCtorSingleLineParentheses(updatedCtor);
-            }
-            else if (paramListDecl.Parameters.Count == 1)
-            {
-                // Parentheses and the parameter must be on the same line as the method identifier
-                updatedCtor = NormalizeCtorSingleLineParentheses(updatedCtor);
-
-                // Ensure the parameter is declared within a single line
-                var param = updatedCtor.ParameterList.Parameters[0];
-                var updatedParam = FormatSingleLineParameter(param);
-
-                if (!ReferenceEquals(param, updatedParam))
-                {
-                    updatedCtor = updatedCtor.WithParameterList(SyntaxFactory
-                        .ParameterList()
-                        .AddParameters(updatedParam)
-                    );
-                }
-            }
-            else
-            {
-                // Resolve whitespace trivia used for the method identation.
-                // This whitespace will be used to indent the parameters.
-                var methodIndent = GetDeclarationIndentation(updatedCtor);
-
-                // Parentheses must be on the separate lines (as well as parameters)
-                updatedCtor = NormalizeCtorMultiLineParentheses(updatedCtor, methodIndent);
-
-                // Format parameters so they are declared on single lines
-                var updatedParams = updatedCtor.ParameterList.Parameters
-                    .Select(x => FormatSingleLineParameter(x))
-                    .ToArray();
-
-                // Create a parameter list where each parameter is declared on its own line
-                var updatedParamsList = OrganizeMultiLineParameterList(updatedParams, methodIndent);
-
-                updatedCtor = updatedCtor.WithParameterList(
-                    updatedCtor.ParameterList.WithParameters(updatedParamsList)
-                );
-            }
-
-            // If there were changes, update the document
-            if (!ReferenceEquals(ctor, updatedCtor))
-            {
-                var root = await document.GetSyntaxRootAsync(cancellationToken);
-                var updatedRoot = root.ReplaceNode(ctor, updatedCtor);
-                var updatedDocument = document.WithSyntaxRoot(updatedRoot);
-
-                return updatedDocument.Project.Solution;
-            }
-
-            // No changes
-            return document.Project.Solution;
-        }
-
-        private MethodDeclarationSyntax NormalizeMethodSingleLineParentheses(MethodDeclarationSyntax method)
-        {
-            var typeParamEnd = (method.TypeParameterList?.GreaterThanToken).GetValueOrDefault();
-
-            // Remove trivia between identifier and open-parenthesis(generic method scenario):
+            // Remove trivia between identifier and open-parenthesis(generic signature scenario):
             // Foo<T>{trivia}() -> Foo<T>()
             if (typeParamEnd.IsKind(SyntaxKind.GreaterThanToken))
             {
                 if (typeParamEnd.HasTrailingTrivia)
                 {
-                    method = method.WithTypeParameterList(
-                        method.TypeParameterList.WithGreaterThanToken(typeParamEnd.WithTrailingTrivia())
+                    signature = signature.WithTypeParameterList(
+                        signature.TypeParameterList.WithGreaterThanToken(typeParamEnd.WithTrailingTrivia())
                     );
                 }
             }
 
-            // Remove trivia between identifier and open-parenthesis(non-generic method scenario):
+            // Remove trivia between identifier and open-parenthesis(non-generic signature scenario):
             // Foo{trivia}() -> Foo()
-            else
+            else if (signature.Identifier.HasTrailingTrivia)
             {
-                if (method.Identifier.HasTrailingTrivia)
-                {
-                    method = method.WithIdentifier(
-                        method.Identifier.WithTrailingTrivia()
-                    );
-                }
-            }
-
-            // Remove trivia between identifier and open-parenthesis
-            if (method.ParameterList.OpenParenToken.HasLeadingTrivia)
-            {
-                method = method.WithParameterList(
-                    method.ParameterList.WithOpenParenToken(
-                        method.ParameterList.OpenParenToken.WithLeadingTrivia()
-                    )
-                );
-            }
-
-            return method;
-        }
-
-        private ConstructorDeclarationSyntax NormalizeCtorSingleLineParentheses(ConstructorDeclarationSyntax ctor)
-        {
-            // Remove trivia between identifier and open-parenthesis(non-generic method scenario):
-            // Foo{trivia}() -> Foo()
-            if (ctor.Identifier.HasTrailingTrivia)
-            {
-                ctor = ctor.WithIdentifier(
-                    ctor.Identifier.WithTrailingTrivia()
+                signature = signature.WithIdentifier(
+                    signature.Identifier.WithTrailingTrivia()
                 );
             }
 
             // Remove trivia between identifier and open-parenthesis
-            if (ctor.ParameterList.OpenParenToken.HasLeadingTrivia)
+            if (signature.ParameterList.OpenParenToken.HasLeadingTrivia)
             {
-                ctor = ctor.WithParameterList(
-                    ctor.ParameterList.WithOpenParenToken(
-                        ctor.ParameterList.OpenParenToken.WithLeadingTrivia()
+                signature = signature.WithParameterList(
+                    signature.ParameterList.WithOpenParenToken(
+                        signature.ParameterList.OpenParenToken.WithLeadingTrivia()
                     )
                 );
             }
 
-            return ctor;
+            return signature;
         }
 
-        private MethodDeclarationSyntax NormalizeMethodMultiLineParentheses(MethodDeclarationSyntax method, SyntaxTrivia[] indent)
+        private ISignatureSyntax NormalizeMultiLineParentheses(ISignatureSyntax signature, SyntaxTrivia[] indent)
         {
             var eol = SyntaxFactory.EndOfLine(Environment.NewLine);
-            var typeParamEnd = (method.TypeParameterList?.GreaterThanToken).GetValueOrDefault();
+            var typeParamEnd = (signature.TypeParameterList?.GreaterThanToken).GetValueOrDefault();
 
-            // Identifier must have trailing EOL (generic method scenario):
+            // Identifier must have trailing EOL (generic signature scenario):
             if (typeParamEnd.IsKind(SyntaxKind.GreaterThanToken))
             {
-                method = method.WithTypeParameterList(
-                    method.TypeParameterList.WithGreaterThanToken(typeParamEnd.WithTrailingTrivia(eol))
+                signature = signature.WithTypeParameterList(
+                    signature.TypeParameterList.WithGreaterThanToken(typeParamEnd.WithTrailingTrivia(eol))
                 );
             }
 
-            // Identifier must have trailing EOL (non-generic method scenario):
+            // Identifier must have trailing EOL (non-generic signature scenario):
             else
             {
-                method = method.WithIdentifier(
-                    method.Identifier.WithTrailingTrivia(eol)
+                signature = signature.WithIdentifier(
+                    signature.Identifier.WithTrailingTrivia(eol)
                 );
             }
 
             // Open-parenthesis must be indented and have traling EOL
             // Close-paranthesis must be indented
-            method = method.WithParameterList(
-                method.ParameterList
+            signature = signature.WithParameterList(
+                signature.ParameterList
                     .WithOpenParenToken(
-                        method.ParameterList.OpenParenToken
+                        signature.ParameterList.OpenParenToken
                             .WithLeadingTrivia(indent)
                             .WithTrailingTrivia(eol)
                     )
                     .WithCloseParenToken(
-                        method.ParameterList.CloseParenToken
+                        signature.ParameterList.CloseParenToken
                             .WithLeadingTrivia(indent)
                     )
             );
 
-            return method;
-        }
-
-        private ConstructorDeclarationSyntax NormalizeCtorMultiLineParentheses(ConstructorDeclarationSyntax ctor, SyntaxTrivia[] indent)
-        {
-            var eol = SyntaxFactory.EndOfLine(Environment.NewLine);
-
-            ctor = ctor.WithIdentifier(
-                ctor.Identifier.WithTrailingTrivia(eol)
-            );
-
-            // Open-parenthesis must be indented and have traling EOL
-            // Close-paranthesis must be indented
-            ctor = ctor.WithParameterList(
-                ctor.ParameterList
-                    .WithOpenParenToken(
-                        ctor.ParameterList.OpenParenToken
-                            .WithLeadingTrivia(indent)
-                            .WithTrailingTrivia(eol)
-                    )
-                    .WithCloseParenToken(
-                        ctor.ParameterList.CloseParenToken
-                            .WithLeadingTrivia(indent)
-                    )
-            );
-
-            return ctor;
+            return signature;
         }
 
         private SeparatedSyntaxList<ParameterSyntax> OrganizeMultiLineParameterList(ParameterSyntax[] parameters, SyntaxTrivia[] indent)
@@ -390,17 +271,17 @@ namespace CodeAnalysis.ParameterWrapper
             });
         }
 
-        private SyntaxTrivia[] GetDeclarationIndentation(BaseMethodDeclarationSyntax methodOrCtor)
+        private SyntaxTrivia[] GetSignatureIndentation(ISignatureSyntax signature)
         {
             // This method selects whitespace trivia declared
             // after the **last** EOL trivia.
 
-            var methodIndent = Array.Empty<SyntaxTrivia>();
+            var indent = Array.Empty<SyntaxTrivia>();
 
-            if (methodOrCtor.HasLeadingTrivia)
+            if (signature.Node.HasLeadingTrivia)
             {
                 var lastNewLineIndex = -1;
-                var leadingTrivia = methodOrCtor.GetLeadingTrivia();
+                var leadingTrivia = signature.Node.GetLeadingTrivia();
 
                 for (var i = 0; i < leadingTrivia.Count; i++)
                 {
@@ -410,13 +291,13 @@ namespace CodeAnalysis.ParameterWrapper
                     }
                 }
 
-                methodIndent = leadingTrivia
+                indent = leadingTrivia
                     .Skip(lastNewLineIndex + 1)
                     .Where(x => x.IsKind(SyntaxKind.WhitespaceTrivia))
                     .ToArray();
             }
 
-            return methodIndent;
+            return indent;
         }
     }
 }

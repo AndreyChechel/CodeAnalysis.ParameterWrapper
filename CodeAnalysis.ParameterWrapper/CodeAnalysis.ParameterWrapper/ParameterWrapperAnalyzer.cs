@@ -59,30 +59,16 @@ namespace CodeAnalysis.ParameterWrapper
                 return;
             }
 
-            // Only Method and Constructor declarations are allowed.
-            // Get the declaration line.
-            int declLine;
-            string declName;
-
-            if (parameterList.Parent is MethodDeclarationSyntax method)
-            {
-                declName = method.Identifier.ValueText;
-                declLine = method.Identifier.GetLine();
-            }
-            else if (parameterList.Parent is ConstructorDeclarationSyntax ctor)
-            {
-                declName = ctor.Identifier.ValueText + ".ctor";
-                declLine = ctor.Identifier.GetLine();
-            }
-            else
+            // Get signature node if declaration kind is supported.
+            if (!parameterList.TryGetSignature(out var signature))
             {
                 return;
             }
 
             // Get line number for the parentheses
+            var declLine = signature.Line;
             var startBraceLine = parameterList.OpenParenToken.GetLine();
             var closeBraceLine = parameterList.CloseParenToken.GetLine();
-
 
             // Depending on the parameters count, verify whether formatting is optimal
             var parameters = parameterList.Parameters;
@@ -97,7 +83,7 @@ namespace CodeAnalysis.ParameterWrapper
 
                 if (declLine != startBraceLine || declLine != closeBraceLine)
                 {
-                    Report(context, parameterList, declName);
+                    Report(context, parameterList, signature.Name);
                 }
             }
             else
@@ -116,7 +102,7 @@ namespace CodeAnalysis.ParameterWrapper
                     closeBraceLine != startBraceLine + 1 + parameters.Count
                 )
                 {
-                    Report(context, parameterList, declName);
+                    Report(context, parameterList, signature.Name);
                 }
                 else
                 {
@@ -124,7 +110,7 @@ namespace CodeAnalysis.ParameterWrapper
                     var paramLine = parameters[0].GetLine();
                     if (paramLine != startBraceLine + 1)
                     {
-                        Report(context, parameterList, declName);
+                        Report(context, parameterList, signature.Name);
                     }
 
                     // Verify the rest parameters are declared on their lines
@@ -134,7 +120,7 @@ namespace CodeAnalysis.ParameterWrapper
 
                         if (currParamLine != paramLine + 1)
                         {
-                            Report(context, parameterList, declName);
+                            Report(context, parameterList, signature.Name);
                             break;
                         }
 
