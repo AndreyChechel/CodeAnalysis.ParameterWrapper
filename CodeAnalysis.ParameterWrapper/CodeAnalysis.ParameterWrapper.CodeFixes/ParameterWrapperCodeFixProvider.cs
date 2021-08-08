@@ -148,12 +148,20 @@ namespace CodeAnalysis.ParameterWrapper
                 );
             }
 
-            // Remove trivia between identifier and open-parenthesis
-            if (signature.ParameterList.OpenParenToken.HasLeadingTrivia)
+            // Remove trivia:
+            // - between identifier and open-parenthesis
+            // - open-parenthesis and parameter
+            // - parameter and close-parenthesis
+            if (signature.ParameterList.OpenParenToken.HasLeadingTrivia ||
+                signature.ParameterList.OpenParenToken.HasTrailingTrivia ||
+                signature.ParameterList.CloseParenToken.HasLeadingTrivia)
             {
-                signature = signature.WithParameterList(
-                    signature.ParameterList.WithOpenParenToken(
-                        signature.ParameterList.OpenParenToken.WithLeadingTrivia()
+                signature = signature.WithParameterList(signature.ParameterList
+                    .WithOpenParenToken(
+                        signature.ParameterList.OpenParenToken.WithLeadingTrivia().WithTrailingTrivia()
+                    )
+                    .WithCloseParenToken(
+                        signature.ParameterList.CloseParenToken.WithLeadingTrivia()
                     )
                 );
             }

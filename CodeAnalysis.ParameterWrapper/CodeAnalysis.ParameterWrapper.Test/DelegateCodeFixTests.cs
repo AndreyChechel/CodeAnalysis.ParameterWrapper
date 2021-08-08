@@ -31,6 +31,26 @@ namespace Test
         }
 
         [TestMethod]
+        public async Task DelegateParameterListOnMultipleLines_Args0()
+        {
+            var test = @"
+namespace Test
+{
+    delegate void Foo
+    {|#0:(
+    )|};
+}";
+
+            var fixtest = @"
+namespace Test
+{
+    delegate void Foo();
+}";
+
+            await Verify(test, fixtest);
+        }
+
+        [TestMethod]
         public async Task DelegateParameterListOnNewLine_Args1()
         {
             var test = @"
@@ -50,6 +70,27 @@ namespace Test
         }
 
         [TestMethod]
+        public async Task DelegateParameterListOnMultipleLines_Args1()
+        {
+            var test = @"
+namespace Test
+{
+    delegate void Foo
+    {|#0:(
+        int a
+    )|};
+}";
+
+            var fixtest = @"
+namespace Test
+{
+    delegate void Foo(int a);
+}";
+
+            await Verify(test, fixtest);
+        }
+
+        [TestMethod]
         public async Task DelegateParameterListOnNewLine_Args2()
         {
             var test = @"
@@ -57,6 +98,30 @@ namespace Test
 {
     delegate void Foo
     {|#0:(int a, int b)|};
+}";
+
+            var fixtest = @"
+namespace Test
+{
+    delegate void Foo
+    (
+        int a,
+        int b
+    );
+}";
+
+            await Verify(test, fixtest);
+        }
+
+        [TestMethod]
+        public async Task DelegateParameterListOnMultipleLines_Args2()
+        {
+            var test = @"
+namespace Test
+{
+    delegate void Foo{|#0:(
+    int a, 
+    int b)|};
 }";
 
             var fixtest = @"

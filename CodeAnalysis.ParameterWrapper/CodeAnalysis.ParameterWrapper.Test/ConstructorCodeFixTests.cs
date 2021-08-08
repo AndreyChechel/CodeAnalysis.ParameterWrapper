@@ -41,6 +41,36 @@ namespace Test
         }
 
         [TestMethod]
+        public async Task CtorParameterListOnMultipleLines_Args0()
+        {
+            var test = @"
+namespace Test
+{
+    class A
+    {   
+        public A
+        {|#0:(
+        )|}
+        {
+        }
+    }
+}";
+
+            var fixtest = @"
+namespace Test
+{
+    class A
+    {   
+        public A()
+        {
+        }
+    }
+}";
+
+            await Verify(test, fixtest);
+        }
+
+        [TestMethod]
         public async Task CtorParameterListOnNewLine_Args1()
         {
             var test = @"
@@ -70,6 +100,37 @@ namespace Test
         }
 
         [TestMethod]
+        public async Task CtorParameterListOnMultipleLines_Args1()
+        {
+            var test = @"
+namespace Test
+{
+    class A
+    {   
+        public A
+        {|#0:(
+            int a
+        )|}
+        {
+        }
+    }
+}";
+
+            var fixtest = @"
+namespace Test
+{
+    class A
+    {   
+        public A(int a)
+        {
+        }
+    }
+}";
+
+            await Verify(test, fixtest);
+        }
+
+        [TestMethod]
         public async Task CtorParameterListOnNewLine_Args2()
         {
             var test = @"
@@ -79,6 +140,40 @@ namespace Test
     {   
         public A
         {|#0:(int a, int b)|}
+        {
+        }
+    }
+}";
+
+            var fixtest = @"
+namespace Test
+{
+    class A
+    {   
+        public A
+        (
+            int a,
+            int b
+        )
+        {
+        }
+    }
+}";
+
+            await Verify(test, fixtest);
+        }
+
+        [TestMethod]
+        public async Task CtorParameterListOnMultipleLines_Args2()
+        {
+            var test = @"
+namespace Test
+{
+    class A
+    {   
+        public A{|#0:(
+        int a, 
+        int b)|}
         {
         }
     }
